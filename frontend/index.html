@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Moderation</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold text-center mb-8">Image Moderation</h1>
+        
+        <!-- Token Input -->
+        <div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">Authentication</h2>
+            <input type="text" id="token" placeholder="Enter your API token" 
+                   class="w-full px-4 py-2 border rounded-lg mb-4">
+        </div>
+
+        <!-- Image Upload -->
+        <div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">Upload Image</h2>
+            <input type="file" id="imageInput" accept="image/*" 
+                   class="w-full mb-4">
+            <button onclick="analyzeImage()" 
+                    class="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors">
+                Analyze Image
+            </button>
+        </div>
+
+        <!-- Results -->
+        <div id="results" class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6 hidden">
+            <h2 class="text-xl font-semibold mb-4">Analysis Results</h2>
+            <div id="resultsContent"></div>
+        </div>
+    </div>
+
+    <script>
+        async function analyzeImage() {
+            const token = document.getElementById('token').value;
+            const imageFile = document.getElementById('imageInput').files[0];
+            const resultsDiv = document.getElementById('results');
+            const resultsContent = document.getElementById('resultsContent');
+
+            if (!token) {
+                alert('Please enter an API token');
+                return;
+            }
+
+            if (!imageFile) {
+                alert('Please select an image');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', imageFile);
+
+            try {
+                const response = await fetch('http://localhost:7000/moderate', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Error analyzing image');
+                }
+
+                // Display results
+                resultsDiv.classList.remove('hidden');
+                resultsContent.innerHTML = `
+                    <div class="mb-4">
+                        <span class="font-semibold">Safe:</span> 
+                        <span class="${data.safe ? 'text-green-500' : 'text-red-500'}">
+                            ${data.safe ? 'Yes' : 'No'}
+                        </span>
+                    </div>
+                    <div class="mb-4">
+                        <span class="font-semibold">Confidence:</span> 
+                        ${(data.confidence * 100).toFixed(2)}%
+                    </div>
+                    <div class="mb-4">
+                        <span class="font-semibold">Categories:</span>
+                        <ul class="mt-2 space-y-2">
+                            ${Object.entries(data.categories).map(([category, score]) => `
+                                <li class="flex justify-between">
+                                    <span class="capitalize">${category.replace('_', ' ')}:</span>
+                                    <span>${(score * 100).toFixed(2)}%</span>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `;
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+    </script>
+</body>
+</html> 

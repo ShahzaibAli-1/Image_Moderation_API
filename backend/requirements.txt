@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+python-multipart
+python-jose[cryptography]
+passlib[bcrypt]
+motor
+python-dotenv
+Pillow
+numpy
+pydantic
+pytest
+httpx
+python-magic
+tensorflow
+pytest-asyncio
+pytest-env
